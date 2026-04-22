@@ -22,11 +22,21 @@ SEARCH_TERMS = [
 MAX_PRICE_GBP = 500
 
 def connect_sheet():
+    import time
+
     service_account_info = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON)
     creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     client = gspread.authorize(creds)
-    sheet = client.open(SHEET_NAME).sheet1
-    return sheet
+
+    for attempt in range(5):
+        try:
+            sheet = client.open(SHEET_NAME).sheet1
+            return sheet
+        except Exception as e:
+            if attempt == 4:
+                raise
+            print(f"Google Sheets temporary error: {e}. Retrying...")
+            time.sleep(5)
 
 def get_existing_links(sheet):
     values = sheet.get_all_values()
