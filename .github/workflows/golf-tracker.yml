@@ -33,7 +33,16 @@ jobs:
             -H "Content-Type: application/x-www-form-urlencoded" \
             -H "Authorization: Basic $(printf "%s:%s" "${{ secrets.EBAY_APP_ID }}" "${{ secrets.EBAY_CERT_ID }}" | base64)" \
             -d "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope")
-          TOKEN=$(python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])' <<< "$RESPONSE")
+
+          echo "$RESPONSE"
+
+          TOKEN=$(python -c 'import json,sys; data=json.load(sys.stdin); print(data.get("access_token",""))' <<< "$RESPONSE")
+
+          if [ -z "$TOKEN" ]; then
+            echo "Failed to get eBay token"
+            exit 1
+          fi
+
           echo "EBAY_ACCESS_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Run tracker
