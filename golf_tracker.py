@@ -19,7 +19,7 @@ SEARCH_TERMS = [
     "full golf set",
 ]
 
-MAX_PRICE_GBP = 500
+MAX_PRICE_GBP = 900
 
 def connect_sheet():
     import time
