@@ -111,22 +111,26 @@ def listing_to_row(item):
     condition = item.get("condition", "Unknown")
     title_lower = title.lower()
 
-   bad_words = [
-    "parts",
-    "spares",
-    "head only",
-    "shaft only",
-    "left hand",
-    "left handed",
-    "x stiff",
-    "extra stiff",
-    "senior flex",
-    "ladies flex",
-]
+    bad_words = [
+        "parts",
+        "spares",
+        "head only",
+        "shaft only",
+        "left hand",
+        "left handed",
+        "x stiff",
+        "extra stiff",
+        "senior flex",
+        "ladies flex",
+    ]
 
-for word in bad_words:
-    if word in title_lower:
-        return None
+    for word in bad_words:
+        if word in title_lower:
+            return None
+
+    notes = ""
+    if "london" in location.lower() or "london" in title_lower:
+        notes = "London priority"
 
     notes = ""
     if "london" in location.lower() or "london" in title_lower:
