@@ -15,7 +15,6 @@ SCOPES = [
 ]
 
 SEARCH_TERMS = [
-
     # wedges
     "Cleveland CBX 50 wedge",
     "Cleveland CBX ZipCore 50",
@@ -44,6 +43,7 @@ SEARCH_TERMS = [
 
 MAX_PRICE_GBP = 900
 
+
 def connect_sheet():
     import time
 
@@ -53,62 +53,54 @@ def connect_sheet():
 
     for attempt in range(5):
         try:
-            sheet = client.open(SHEET_NAME).sheet1
-            return sheet
+            return client.open(SHEET_NAME).sheet1
         except Exception as e:
             if attempt == 4:
                 raise
             print(f"Google Sheets temporary error: {e}. Retrying...")
             time.sleep(5)
 
+
 def get_existing_links(sheet):
     values = sheet.get_all_values()
+
     if len(values) <= 1:
         return {}
+
     rows = values[1:]
     existing = {}
+
     for idx, row in enumerate(rows, start=2):
         if len(row) >= 10:
             existing[row[9]] = idx
+
     return existing
+
 
 def ebay_search(query):
     url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
+
     headers = {
         "Authorization": f"Bearer {EBAY_ACCESS_TOKEN}",
         "Content-Type": "application/json",
         "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB",
     }
+
     params = {
         "q": query,
         "limit": 50,
         "filter": f"price:[..{MAX_PRICE_GBP}],priceCurrency:GBP",
     }
 
-    r = requests.get(url, headers=headers, params=params, timeout=30)
-    r.raise_for_status()
-    data = r.json()
+    response = requests.get(url, headers=headers, params=params, timeout=30)
+    response.raise_for_status()
+
+    data = response.json()
     return data.get("itemSummaries", [])
+
 
 def listing_to_row(item):
     title = item.get("title", "")
-    price_info = item.get("price", {})
-    price = ""
-    if price_info:
-        price_value = price_info.get("value")
-        currency = price_info.get("currency")
-        if price_value and currency:
-            price = f"{price_value} {currency}"
-
-    item_url = item.get("itemWebUrl", "")
-    location_parts = []
-    if item.get("itemLocation", {}).get("city"):
-        location_parts.append(item["itemLocation"]["city"])
-    if item.get("itemLocation", {}).get("country"):
-        location_parts.append(item["itemLocation"]["country"])
-    location = ", ".join(location_parts)
-
-    condition = item.get("condition", "Unknown")
     title_lower = title.lower()
 
     bad_words = [
@@ -128,15 +120,37 @@ def listing_to_row(item):
         if word in title_lower:
             return None
 
-    notes = ""
-    if "london" in location.lower() or "london" in title_lower:
-        notes = "London priority"
+    price_info = item.get("price", {})
+    price = ""
+
+    if price_info:
+        price_value = price_info.get("value")
+        currency = price_info.get("currency")
+
+        if price_value and currency:
+            price = f"{price_value} {currency}"
+
+    item_url = item.get("itemWebUrl", "")
+
+    location_parts = []
+    item_location = item.get("itemLocation", {})
+
+    if item_location.get("city"):
+        location_parts.append(item_location["city"])
+
+    if item_location.get("country"):
+        location_parts.append(item_location["country"])
+
+    location = ", ".join(location_parts)
+    condition = item.get("condition", "Unknown")
 
     notes = ""
+
     if "london" in location.lower() or "london" in title_lower:
         notes = "London priority"
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
     return [
         now,
         now,
@@ -152,6 +166,7 @@ def listing_to_row(item):
         notes,
     ]
 
+
 def update_sheet(sheet, rows):
     existing_links = get_existing_links(sheet)
     updates = []
@@ -159,11 +174,12 @@ def update_sheet(sheet, rows):
 
     for row in rows:
         link = row[9]
+
         if link in existing_links:
             row_num = existing_links[link]
             updates.append({
                 "range": f"A{row_num}:L{row_num}",
-                "values": [row]
+                "values": [row],
             })
         else:
             new_rows.append(row)
@@ -176,6 +192,7 @@ def update_sheet(sheet, rows):
         end_row = start_row + len(new_rows) - 1
         sheet.update(new_rows, f"A{start_row}:L{end_row}")
 
+
 def main():
     print("Starting API search...")
     sheet = connect_sheet()
@@ -184,14 +201,18 @@ def main():
     for term in SEARCH_TERMS:
         print(f"Searching eBay API for: {term}")
         items = ebay_search(term)
+
         for item in items:
             row = listing_to_row(item)
+
             if row:
                 rows.append(row)
 
     unique = {}
+
     for row in rows:
         unique[row[9]] = row
+
     final_rows = list(unique.values())
 
     if final_rows:
@@ -200,6 +221,7 @@ def main():
         print("Done.")
     else:
         print("No listings found.")
+
 
 if __name__ == "__main__":
     main()
