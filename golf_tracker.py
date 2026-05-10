@@ -12,11 +12,32 @@ GOOGLE_SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
-]
-
 SEARCH_TERMS = [
-    "golf club set",
-    "full golf set",
+
+    # wedges
+    "Cleveland CBX 50 wedge",
+    "Cleveland CBX ZipCore 50",
+    "50 degree gap wedge",
+
+    # putters
+    "Odyssey DFX Double Wide",
+    "Odyssey White Hot Double Wide",
+    "TaylorMade Spider putter 34",
+
+    # irons
+    "Mizuno JPX 921 Hot Metal regular flex",
+    "Mizuno JPX 923 Hot Metal regular flex",
+    "TaylorMade P790 regular flex",
+
+    # hybrids / woods
+    "Ping G430 4 hybrid regular",
+    "Ping G425 4 hybrid regular",
+    "Ping G430 5 wood regular",
+    "Ping G425 5 wood regular",
+
+    # drivers
+    "Ping G430 Max 10.5 regular",
+    "Ping G425 Max 10.5 regular",
 ]
 
 MAX_PRICE_GBP = 900
@@ -88,7 +109,21 @@ def listing_to_row(item):
     condition = item.get("condition", "Unknown")
     title_lower = title.lower()
 
-    if "parts" in title_lower or "spares" in title_lower:
+   bad_words = [
+    "parts",
+    "spares",
+    "head only",
+    "shaft only",
+    "left hand",
+    "left handed",
+    "x stiff",
+    "extra stiff",
+    "senior flex",
+    "ladies flex",
+]
+
+for word in bad_words:
+    if word in title_lower:
         return None
 
     notes = ""
